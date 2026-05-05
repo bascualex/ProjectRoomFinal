@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProjectRoom - Roles y Permisos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 900: '#0f172a', 800: '#1e293b', 950: '#020617' },
+                        accent: { 500: '#3b82f6', 600: '#2563eb' }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        .checkbox-item input[type="checkbox"]:checked + label {
+            border-color: var(--item-color);
+            background-color: color-mix(in srgb, var(--item-color) 15%, transparent);
+            color: var(--item-color);
+        }
+        .checkbox-item input[type="checkbox"] { display: none; }
+        .checkbox-item label {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+            border: 1px solid #334155; color: #94a3b8; cursor: pointer;
+            transition: all 0.15s; white-space: nowrap; user-select: none;
+        }
+        .checkbox-item label:hover { border-color: #475569; color: #e2e8f0; }
+        .checkbox-item label .dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background-color: var(--item-color, #64748b); flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="bg-dark-900 text-slate-200 font-sans antialiased h-screen flex overflow-hidden">
+
+<input type="checkbox" id="menu-toggle" class="peer hidden" />
+<input type="checkbox" id="modal-rol" class="peer/modal-rol hidden" />
+<input type="checkbox" id="modal-etiqueta" class="peer/modal-etiqueta hidden" />
+
+<label for="menu-toggle" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm peer-checked:block md:hidden cursor-pointer"></label>
+
+<!-- ====== MODAL CREAR ROL ====== -->
+<label for="modal-rol" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden peer-checked/modal-rol:flex items-center justify-center cursor-pointer">
+    <div class="bg-dark-950 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg mx-4 cursor-default max-h-[90vh] flex flex-col" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-6 border-b border-slate-800 shrink-0">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="ph ph-shield-plus text-accent-500 text-xl"></i> Crear Nuevo Rol
+            </h2>
+            <label for="modal-rol" class="text-slate-400 hover:text-white cursor-pointer p-1 rounded hover:bg-slate-800 transition-colors">
+                <i class="ph ph-x text-xl"></i>
+            </label>
+        </div>
+        <div class="overflow-y-auto flex-1">
+            <form th:action="@{/roles/crear}" method="post" class="p-6 space-y-5">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nombre del Rol</label>
+                    <input type="text" name="nombre" required placeholder="Ej: Desarrollador Senior"
+                           class="w-full bg-dark-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent-500 transition-colors">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Color</label>
+                    <div class="flex items-center gap-3 bg-dark-800 border border-slate-700 rounded-lg px-4 py-1.5">
+                        <input type="color" name="color" value="#3b82f6" class="w-8 h-8 rounded cursor-pointer bg-transparent border-0 p-0">
+                        <span class="text-sm text-slate-400">Elige un color representativo</span>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="ph ph-lock-key text-slate-500"></i> Permisos
+                        </label>
+                        <span class="text-[10px] text-slate-600">Selecciona los que apliquen</span>
+                    </div>
+                    <div class="bg-dark-800 border border-slate-700 rounded-lg p-3 flex flex-wrap gap-2">
+                        <span th:if="${permisos == null or permisos.isEmpty()}" class="text-xs text-slate-600 italic">No hay permisos disponibles</span>
+                        <div th:each="permiso : ${permisos}" class="checkbox-item" style="--item-color: #3b82f6">
+                            <input type="checkbox" name="idPermisos" th:value="${permiso.id}" th:id="'perm-' + ${permiso.id}">
+                            <label th:for="'perm-' + ${permiso.id}">
+                                <span class="dot"></span>
+                                <span th:text="${permiso.nombre}" class="font-mono"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="ph ph-tag text-slate-500"></i> Etiquetas visibles
+                        </label>
+                        <span class="text-[10px] text-slate-600">Tareas que podrán ver</span>
+                    </div>
+                    <div class="bg-dark-800 border border-slate-700 rounded-lg p-3 flex flex-wrap gap-2">
+                        <span th:if="${etiquetas == null or etiquetas.isEmpty()}" class="text-xs text-slate-600 italic">No hay etiquetas disponibles</span>
+                        <div th:each="etiqueta : ${etiquetas}" class="checkbox-item"
+                             th:style="'--item-color: ' + ${etiqueta.color}">
+                            <input type="checkbox" name="idEtiquetas" th:value="${etiqueta.id}" th:id="'etiq-' + ${etiqueta.id}">
+                            <label th:for="'etiq-' + ${etiqueta.id}">
+                                <span class="dot"></span>
+                                <span th:text="${etiqueta.nombre}"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-1">
+                    <label for="modal-rol" class="flex-1 py-2.5 text-center border border-slate-600 text-slate-400 rounded-lg hover:bg-slate-700/50 text-sm cursor-pointer transition-colors">
+                        Cancelar
+                    </label>
+                    <button type="submit" class="flex-1 py-2.5 bg-accent-600 hover:bg-accent-500 text-white rounded-lg text-sm font-medium shadow-lg transition-colors">
+                        Crear Rol
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</label>
+
+<!-- ====== MODAL CREAR ETIQUETA ====== -->
+<label for="modal-etiqueta" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden peer-checked/modal-etiqueta:flex items-center justify-center cursor-pointer">
+    <div class="bg-dark-950 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md mx-4 cursor-default" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-6 border-b border-slate-800">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="ph ph-tag text-accent-500 text-xl"></i> Crear Nueva Etiqueta
+            </h2>
+            <label for="modal-etiqueta" class="text-slate-400 hover:text-white cursor-pointer p-1 rounded hover:bg-slate-800 transition-colors">
+                <i class="ph ph-x text-xl"></i>
+            </label>
+        </div>
+        <form th:action="@{/etiquetas/crear}" method="post" class="p-6 space-y-4">
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nombre de la Etiqueta</label>
+                <input type="text" name="nombre" required placeholder="Ej: Urgente, Frontend, QA..."
+                       class="w-full bg-dark-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent-500 transition-colors">
+            </div>
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Color</label>
+                <div class="flex items-center gap-3 bg-dark-800 border border-slate-700 rounded-lg px-4 py-1.5">
+                    <input type="color" name="color" value="#10b981" class="w-8 h-8 rounded cursor-pointer bg-transparent border-0 p-0">
+                    <span class="text-sm text-slate-400">Elige un color representativo</span>
+                </div>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <label for="modal-etiqueta" class="flex-1 py-2.5 text-center border border-slate-600 text-slate-400 rounded-lg hover:bg-slate-700/50 text-sm cursor-pointer transition-colors">
+                    Cancelar
+                </label>
+                <button type="submit" class="flex-1 py-2.5 bg-accent-600 hover:bg-accent-500 text-white rounded-lg text-sm font-medium shadow-lg transition-colors">
+                    Crear Etiqueta
+                </button>
+            </div>
+        </form>
+    </div>
+</label>
+
+<!-- ====== SIDEBAR PRINCIPAL ====== -->
+<aside class="fixed inset-y-0 left-0 z-50 w-64 bg-dark-950 flex flex-col border-r border-slate-800 transform -translate-x-full transition-transform duration-300 ease-in-out peer-checked:translate-x-0 md:translate-x-0 md:static">
+    <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800">
+        <a th:href="@{/}" class="flex items-center">
+            <img src="/img/logo.png" alt="Logo" class="w-10 h-10">
+            <span class="text-xl font-bold tracking-wide text-white ml-2">ProjectRoom</span>
+        </a>
+        <label for="menu-toggle" class="md:hidden text-slate-400 cursor-pointer hover:text-white"><i class="ph ph-x text-2xl"></i></label>
+    </div>
+    <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Principal</p>
+        <a th:href="@{/}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-kanban text-xl mr-3"></i><span class="font-medium">Proyectos</span>
+        </a>
+        <a th:href="@{/tareas}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-check-square-offset text-xl mr-3"></i><span class="font-medium">Mis Tareas</span>
+        </a>
+        <a th:href="@{/estadisticas}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-chart-line-up text-xl mr-3"></i><span class="font-medium">Estadísticas</span>
+        </a>
+        <a th:href="@{/archivados}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-archive text-xl mr-3"></i><span class="font-medium">Proyectos Archivados</span>
+        </a>
+        <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2">Administración</p>
+        <a th:href="@{/integrantes}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-users text-xl mr-3"></i><span class="font-medium">Integrantes</span>
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 bg-accent-600/10 text-accent-500 rounded-lg transition-colors">
+            <i class="ph ph-shield-checkered text-xl mr-3"></i><span class="font-medium">Roles y Permisos</span>
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg group transition-colors">
+            <i class="ph ph-gear text-xl mr-3"></i>
+            <span class="font-medium">Configuración</span>
+        </a>
+    </nav>
+    <div class="p-4 border-t border-slate-800">
+        <div class="flex items-center gap-3">
+            <img th:src="@{'/' + ${usuario.foto}}" alt="User" class="w-10 h-10 rounded-full border-2 border-slate-700 object-cover">
+            <div class="flex flex-col truncate">
+                <span th:text="${usuario.nombre + ' ' + usuario.apellido}" class="text-sm font-semibold text-white"></span>
+                <span th:text="${usuario.email}" class="text-xs text-slate-500"></span>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- ====== MAIN ====== -->
+<main class="flex-1 flex h-full overflow-hidden">
+
+    <!-- Sub-sidebar vertical en desktop -->
+    <aside class="w-52 border-r border-slate-800 bg-dark-950 flex-col py-6 hidden md:flex shrink-0">
+        <p class="px-5 text-[10px] font-bold uppercase tracking-widest text-slate-600 mb-3">Secciones</p>
+        <a th:href="@{/roles_permisos(seccion='roles')}"
+           class="flex items-center gap-3 px-5 py-3 text-sm font-medium transition-colors rounded-lg mx-2"
+           th:classappend="${seccion == 'roles'} ? 'bg-accent-600/10 text-accent-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white'">
+            <i class="ph ph-shield-star text-lg"></i> Roles
+        </a>
+        <a th:href="@{/roles_permisos(seccion='etiquetas')}"
+           class="flex items-center gap-3 px-5 py-3 text-sm font-medium transition-colors rounded-lg mx-2 mt-1"
+           th:classappend="${seccion == 'etiquetas'} ? 'bg-accent-600/10 text-accent-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white'">
+            <i class="ph ph-tag text-lg"></i> Etiquetas y Permisos
+        </a>
+    </aside>
+
+    <!-- Contenido -->
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+
+        <!-- Header con tabs móvil integrados -->
+        <header class="bg-dark-900/50 backdrop-blur-md border-b border-slate-800 sticky top-0 z-10">
+            <div class="h-16 flex items-center justify-between px-4 md:px-6">
+                <div class="flex items-center gap-3">
+                    <label for="menu-toggle" class="md:hidden text-slate-400 hover:text-white cursor-pointer p-2 -ml-2">
+                        <i class="ph ph-list text-2xl"></i>
+                    </label>
+                    <h1 class="text-xl font-semibold text-white"
+                        th:text="${seccion == 'roles'} ? 'Roles' : 'Etiquetas y Permisos'"></h1>
+                </div>
+                <label th:if="${seccion == 'roles'}" for="modal-rol"
+                       class="bg-accent-600 hover:bg-accent-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 cursor-pointer transition-colors shadow-lg shadow-accent-600/20">
+                    <i class="ph ph-plus text-lg"></i>
+                    <span class="hidden sm:inline">Nuevo Rol</span>
+                </label>
+                <label th:if="${seccion == 'etiquetas'}" for="modal-etiqueta"
+                       class="bg-accent-600 hover:bg-accent-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 cursor-pointer transition-colors shadow-lg shadow-accent-600/20">
+                    <i class="ph ph-plus text-lg"></i>
+                    <span class="hidden sm:inline">Nueva Etiqueta</span>
+                </label>
+            </div>
+
+            <!-- Tabs en móvil (bajo el header) -->
+            <div class="flex md:hidden border-t border-slate-800">
+                <a th:href="@{/roles_permisos(seccion='roles')}"
+                   class="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors border-b-2"
+                   th:classappend="${seccion == 'roles'} ? 'border-accent-500 text-accent-500' : 'border-transparent text-slate-400 hover:text-white'">
+                    <i class="ph ph-shield-star text-base"></i> Roles
+                </a>
+                <a th:href="@{/roles_permisos(seccion='etiquetas')}"
+                   class="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors border-b-2"
+                   th:classappend="${seccion == 'etiquetas'} ? 'border-accent-500 text-accent-500' : 'border-transparent text-slate-400 hover:text-white'">
+                    <i class="ph ph-tag text-base"></i> Etiquetas y Permisos
+                </a>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-6">
+
+            <!-- ====== SECCIÓN ROLES ====== -->
+            <div th:if="${seccion == 'roles'}">
+                <div th:if="${roles.isEmpty()}" class="text-center text-slate-600 py-20">
+                    <i class="ph ph-shield-slash text-5xl mb-4"></i>
+                    <p class="font-medium">No hay roles creados aún</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div th:each="rol : ${roles}"
+                         class="bg-dark-800 rounded-xl border border-slate-700/50 p-5 hover:border-slate-600 transition-all flex flex-col gap-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center"
+                                     th:style="'background-color: ' + ${rol.color} + '20'">
+                                    <i class="ph ph-shield-star text-xl" th:style="'color: ' + ${rol.color}"></i>
+                                </div>
+                                <div>
+                                    <h3 th:text="${rol.nombre}" class="font-semibold text-white"></h3>
+                                    <p th:text="${'Por ' + (rol.usuario != null ? rol.usuario.nombre : 'Sistema')}"
+                                       class="text-xs text-slate-500 mt-0.5"></p>
+                                </div>
+                            </div>
+                            <span class="w-3 h-3 rounded-full mt-1 shrink-0" th:style="'background-color: ' + ${rol.color}"></span>
+                        </div>
+
+                        <div>
+                            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2 flex items-center gap-1">
+                                <i class="ph ph-lock-key"></i> Permisos
+                            </p>
+                            <div class="flex flex-wrap gap-1.5">
+                                <span th:if="${rol.permisos.isEmpty()}" class="text-xs text-slate-600 italic">Sin permisos</span>
+                                <span th:each="permiso : ${rol.permisos}"
+                                      th:text="${permiso.nombre}"
+                                      class="text-[10px] px-2 py-0.5 rounded bg-slate-700/50 text-slate-400 border border-slate-700 font-mono">
+                                </span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2 flex items-center gap-1">
+                                <i class="ph ph-tag"></i> Etiquetas visibles
+                            </p>
+                            <div class="flex flex-wrap gap-1.5">
+                                <span th:if="${rol.etiquetas.isEmpty()}" class="text-xs text-slate-600 italic">Sin etiquetas asignadas</span>
+                                <span th:each="etiqueta : ${rol.etiquetas}"
+                                      th:text="${etiqueta.nombre}"
+                                      class="text-[10px] px-2 py-0.5 rounded border font-semibold"
+                                      th:style="'color: ' + ${etiqueta.color} + '; background-color: ' + ${etiqueta.color} + '15; border-color: ' + ${etiqueta.color} + '40'">
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-700/50 flex items-center justify-between">
+                            <span class="text-xs text-slate-500" th:text="${rol.integrantes.size()} + ' miembros'"></span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                                  th:text="${rol.nombre}"
+                                  th:style="'color: ' + ${rol.color} + '; background-color: ' + ${rol.color} + '15; border-color: ' + ${rol.color} + '40'">
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== SECCIÓN ETIQUETAS Y PERMISOS ====== -->
+            <div th:if="${seccion == 'etiquetas'}">
+                <div class="mb-10">
+                    <h2 class="text-lg font-bold text-white mb-5 flex items-center gap-2">
+                        <i class="ph ph-tag text-accent-500"></i> Etiquetas
+                    </h2>
+                    <div th:if="${etiquetas.isEmpty()}" class="text-center text-slate-600 py-12 bg-dark-800 rounded-xl border border-slate-700/50">
+                        <i class="ph ph-tag text-4xl mb-3"></i>
+                        <p class="font-medium">No hay etiquetas creadas</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div th:each="etiqueta : ${etiquetas}"
+                             class="bg-dark-800 rounded-xl border border-slate-700/50 p-5 hover:border-slate-600 transition-all">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                                         th:style="'background-color: ' + ${etiqueta.color} + '20'">
+                                        <i class="ph ph-tag text-lg" th:style="'color: ' + ${etiqueta.color}"></i>
+                                    </div>
+                                    <span th:text="${etiqueta.nombre}" class="font-semibold text-white"></span>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold border"
+                                      th:text="${etiqueta.nombre}"
+                                      th:style="'color: ' + ${etiqueta.color} + '; background-color: ' + ${etiqueta.color} + '20; border-color: ' + ${etiqueta.color} + '40'">
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500"
+                               th:text="'Creada por ' + (${etiqueta.usuario != null ? etiqueta.usuario.nombre : 'Sistema'})"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-700/50 mb-10"></div>
+
+                <div>
+                    <h2 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                        <i class="ph ph-lock-key text-slate-400"></i> Permisos del Sistema
+                    </h2>
+                    <p class="text-sm text-slate-500 mb-5">Los permisos son definidos por el sistema y se asignan a través de los roles.</p>
+                    <div class="bg-dark-800 rounded-xl border border-slate-700/50 overflow-hidden">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-dark-950 border-b border-slate-700/50">
+                            <tr>
+                                <th class="px-6 py-4 text-[10px] uppercase font-bold text-slate-500 tracking-widest">ID</th>
+                                <th class="px-6 py-4 text-[10px] uppercase font-bold text-slate-500 tracking-widest">Permiso</th>
+                                <th class="px-6 py-4 text-[10px] uppercase font-bold text-slate-500 tracking-widest">Roles que lo tienen</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-700/50">
+                            <tr th:each="permiso : ${permisos}" class="hover:bg-slate-700/10 transition-colors">
+                                <td class="px-6 py-4 text-slate-600 font-mono text-xs" th:text="${permiso.id}"></td>
+                                <td class="px-6 py-4">
+                                    <span class="font-mono text-xs px-2.5 py-1 bg-slate-700/50 text-slate-300 rounded border border-slate-700"
+                                          th:text="${permiso.nombre}"></span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-wrap gap-1.5">
+                                        <span th:if="${permiso.roles.isEmpty()}" class="text-xs text-slate-600 italic">Ninguno</span>
+                                        <span th:each="rol : ${permiso.roles}"
+                                              th:text="${rol.nombre}"
+                                              class="text-[10px] px-2 py-0.5 rounded border font-semibold"
+                                              th:style="'color: ' + ${rol.color} + '; background-color: ' + ${rol.color} + '15; border-color: ' + ${rol.color} + '40'">
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'ProjectRoom - ' + ${proyecto.nombre}"></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 900: '#0f172a', 800: '#1e293b', 950: '#020617' },
+                        accent: { 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+                    },
+                    screens: { 'xs': '400px' }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+    </style>
+</head>
+<body class="bg-dark-900 text-slate-200 font-sans antialiased h-screen flex overflow-hidden">
+
+<input type="checkbox" id="menu-toggle" class="peer/menu hidden" />
+<label for="menu-toggle" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm peer-checked/menu:block md:hidden cursor-pointer"></label>
+
+<input type="checkbox" id="dialog-tarea" class="peer/dialog hidden" />
+<label for="dialog-tarea"
+       class="fixed inset-0 bg-black/70 z-50 hidden backdrop-blur-sm peer-checked/dialog:flex items-center justify-center cursor-pointer">
+    <div class="bg-dark-800 rounded-2xl border border-slate-700 w-full max-w-md mx-4 shadow-2xl cursor-default"
+         onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-6 border-b border-slate-700">
+            <h2 class="text-lg font-bold text-white">Nueva Tarea</h2>
+            <label for="dialog-tarea" class="text-slate-400 hover:text-white cursor-pointer p-1 rounded hover:bg-slate-700 transition-colors">
+                <i class="ph ph-x text-xl"></i>
+            </label>
+        </div>
+        <form th:action="@{/proyecto/{id}/tarea(id=${proyecto.id})}" method="post" class="p-6 space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Nombre de la tarea *</label>
+                <input type="text" name="nombre" required placeholder="Ej: Diseñar pantalla de login"
+                       class="w-full bg-dark-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent-500 transition-colors">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Estado *</label>
+                <select name="idEstado" required
+                        class="w-full bg-dark-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent-500 transition-colors">
+                    <option value="" disabled selected>Selecciona un estado</option>
+                    <option th:each="estado : ${estados}" th:value="${estado.id}" th:text="${estado.nombre}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Prioridad</label>
+                <select name="idPrioridad"
+                        class="w-full bg-dark-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent-500 transition-colors">
+                    <option value="">Sin prioridad</option>
+                    <option th:each="prioridad : ${prioridades}" th:value="${prioridad.id}" th:text="${prioridad.nombre}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Etiqueta</label>
+                <select name="idEtiqueta"
+                        class="w-full bg-dark-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent-500 transition-colors">
+                    <option value="">Sin etiqueta</option>
+                    <option th:each="etiqueta : ${etiquetas}" th:value="${etiqueta.id}" th:text="${etiqueta.nombre}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Asignar a</label>
+                <select name="idIntegrante"
+                        class="w-full bg-dark-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent-500 transition-colors">
+                    <option value="">Sin asignar</option>
+                    <option th:each="integrante : ${proyecto.integrantes}"
+                            th:value="${integrante.id}"
+                            th:text="${integrante.usuario.nombre + ' ' + integrante.usuario.apellido + ' (' + integrante.rol.nombre + ')'}"></option>
+                </select>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <label for="dialog-tarea" class="flex-1 py-2.5 text-center border border-slate-600 text-slate-400 rounded-lg hover:bg-slate-700/50 text-sm cursor-pointer transition-colors">
+                    Cancelar
+                </label>
+                <button type="submit" class="flex-1 py-2.5 bg-accent-600 hover:bg-accent-500 text-white rounded-lg text-sm font-medium shadow-lg shadow-accent-600/20 transition-colors">
+                    Crear Tarea
+                </button>
+            </div>
+        </form>
+    </div>
+</label>
+
+<!-- ====== SIDEBAR PRINCIPAL ====== -->
+<aside class="fixed inset-y-0 left-0 z-50 w-64 bg-dark-950 flex flex-col border-r border-slate-800 transform -translate-x-full transition-transform duration-300 ease-in-out peer-checked/menu:translate-x-0 md:translate-x-0 md:static">
+    <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800">
+        <a th:href="@{/}" class="flex items-center">
+            <img src="/img/logo.png" alt="Logo" class="w-10 h-10">
+            <span class="text-xl font-bold tracking-wide text-white ml-2">ProjectRoom</span>
+        </a>
+        <label for="menu-toggle" class="md:hidden text-slate-400 cursor-pointer hover:text-white">
+            <i class="ph ph-x text-2xl"></i>
+        </label>
+    </div>
+    <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Principal</p>
+        <a th:href="@{/}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-kanban text-xl mr-3"></i><span class="font-medium">Proyectos</span>
+        </a>
+        <a th:href="@{/tareas}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-check-square-offset text-xl mr-3"></i><span class="font-medium">Mis Tareas</span>
+        </a>
+        <a th:href="@{/estadisticas}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-chart-line-up text-xl mr-3"></i><span class="font-medium">Estadísticas</span>
+        </a>
+        <a th:href="@{/archivados}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-archive text-xl mr-3"></i><span class="font-medium">Proyectos Archivados</span>
+        </a>
+        <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2">Administración</p>
+        <a th:href="@{/integrantes}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-users text-xl mr-3"></i><span class="font-medium">Integrantes</span>
+        </a>
+        <a th:href="@{/roles_permisos}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-shield-checkered text-xl mr-3"></i><span class="font-medium">Roles y Permisos</span>
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg group transition-colors">
+            <i class="ph ph-gear text-xl mr-3"></i>
+            <span class="font-medium">Configuración</span>
+        </a>
+    </nav>
+    <div class="p-4 border-t border-slate-800">
+        <div th:if="${usuario != null}" class="flex items-center gap-3">
+            <img th:src="@{'/' + ${usuario.foto}}" alt="User" class="w-10 h-10 rounded-full border-2 border-slate-700 object-cover">
+            <div class="flex flex-col truncate">
+                <span th:text="${usuario.nombre + ' ' + usuario.apellido}" class="text-sm font-semibold text-white"></span>
+                <span th:text="${usuario.email}" class="text-xs text-slate-500"></span>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- ====== MAIN ====== -->
+<main class="flex-1 flex h-full overflow-hidden">
+
+    <!-- Sub-sidebar proyecto en desktop -->
+    <aside class="w-52 border-r border-slate-800 bg-dark-950 flex-col py-6 hidden md:flex shrink-0">
+        <p class="px-5 text-[10px] font-bold uppercase tracking-widest text-slate-600 mb-3">Secciones</p>
+        <a href="#" class="flex items-center gap-3 px-5 py-3 text-sm font-medium bg-accent-600/10 text-accent-500 rounded-lg mx-2 transition-colors">
+            <i class="ph ph-kanban text-lg"></i> Tablero
+        </a>
+        <a href="#" class="flex items-center gap-3 px-5 py-3 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg mx-2 mt-1 transition-colors">
+            <i class="ph ph-files text-lg"></i> Archivos
+        </a>
+        <a href="#" class="flex items-center gap-3 px-5 py-3 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg mx-2 mt-1 transition-colors">
+            <i class="ph ph-chart-pie-slice text-lg"></i> Finanzas
+        </a>
+    </aside>
+
+    <!-- Contenido -->
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+
+        <!-- Header con tabs proyecto en móvil -->
+        <header class="bg-dark-900/50 backdrop-blur-md border-b border-slate-800 sticky top-0 z-10">
+            <div class="h-16 flex items-center justify-between px-4 md:px-6">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <label for="menu-toggle" class="md:hidden text-slate-400 hover:text-white cursor-pointer p-2 -ml-2">
+                        <i class="ph ph-list text-2xl"></i>
+                    </label>
+                    <h1 th:text="${proyecto.nombre}" class="text-lg md:text-xl font-semibold text-white truncate max-w-[120px] xs:max-w-[180px] md:max-w-none"></h1>
+                    <span th:text="${proyecto.tipo}"
+                          class="hidden xs:inline-block px-2.5 py-1 text-xs rounded-full font-medium border shrink-0"
+                          th:style="'background-color: ' + ${proyecto.color} + '20; color: ' + ${proyecto.color} + '; border-color: ' + ${proyecto.color} + '40'">
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 md:gap-3">
+                    <div class="hidden sm:flex -space-x-2">
+                        <img th:each="integrante, iter : ${proyecto.integrantes}"
+                             th:if="${iter.index < 3}"
+                             th:src="@{'/' + ${integrante.usuario.foto}}"
+                             th:title="${integrante.usuario.nombre + ' ' + integrante.usuario.apellido}"
+                             class="w-8 h-8 rounded-full border-2 border-dark-900 object-cover">
+                        <div th:if="${proyecto.integrantes.size() > 3}"
+                             class="w-8 h-8 rounded-full border-2 border-dark-900 bg-slate-700 text-xs flex items-center justify-center text-white font-medium"
+                             th:text="'+' + ${proyecto.integrantes.size() - 3}"></div>
+                    </div>
+                    <button class="bg-dark-800 hover:bg-dark-800/80 text-slate-300 border border-slate-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <i class="ph ph-gear text-lg align-middle md:mr-1"></i>
+                        <span class="hidden md:inline">Configurar</span>
+                    </button>
+                    <label for="dialog-tarea"
+                           class="hidden md:flex cursor-pointer bg-accent-600 hover:bg-accent-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg shadow-accent-600/20 items-center gap-2 transition-colors">
+                        <i class="ph ph-plus text-lg"></i> Nueva Tarea
+                    </label>
+                </div>
+            </div>
+
+            <!-- Tabs proyecto en móvil -->
+            <div class="flex md:hidden border-t border-slate-800">
+                <a href="#" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium border-b-2 border-accent-500 text-accent-500">
+                    <i class="ph ph-kanban text-base"></i> Tablero
+                </a>
+                <a href="#" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-white">
+                    <i class="ph ph-files text-base"></i> Archivos
+                </a>
+                <a href="#" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-white">
+                    <i class="ph ph-chart-pie-slice text-base"></i> Finanzas
+                </a>
+            </div>
+        </header>
+
+        <!-- Contenido kanban -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-6">
+            <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+
+                <!-- Kanban -->
+                <div class="xl:col-span-3 flex flex-col md:flex-row gap-6 overflow-x-auto pb-4 custom-scrollbar">
+                    <div th:each="estado : ${estados}"
+                         th:with="tareasColumna=${tareasPorEstado[estado.id]}"
+                         class="flex-1 min-w-[280px] xs:min-w-[320px] flex flex-col bg-dark-950/50 rounded-xl border border-slate-800/50 h-fit">
+
+                        <div class="p-4 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-dark-950/90 backdrop-blur rounded-t-xl z-10">
+                            <h3 class="font-semibold flex items-center gap-2" th:style="'color: ' + ${estado.color}">
+                                <div class="w-2 h-2 rounded-full" th:style="'background-color: ' + ${estado.color}"></div>
+                                <span th:text="${estado.nombre}"></span>
+                                <span class="bg-slate-800 text-slate-500 text-xs px-2 py-0.5 rounded-full"
+                                      th:text="${tareasColumna != null ? tareasColumna.size() : 0}"></span>
+                            </h3>
+                            <label for="dialog-tarea" class="text-slate-500 hover:text-white cursor-pointer p-1 rounded hover:bg-slate-800 transition-colors">
+                                <i class="ph ph-plus"></i>
+                            </label>
+                        </div>
+
+                        <div class="p-3 space-y-3 overflow-y-auto">
+                            <div th:each="tarea : ${tareasColumna}"
+                                 class="bg-dark-800 p-4 rounded-lg border border-slate-700/50 hover:border-accent-500/50 transition-all shadow-sm">
+                                <div class="flex gap-2 flex-wrap mb-2">
+                                    <span th:if="${tarea.prioridad != null}"
+                                          th:text="${tarea.prioridad.nombre}"
+                                          class="text-xs font-bold px-2 py-0.5 rounded"
+                                          th:style="'color: ' + ${tarea.prioridad.color} + '; background-color: ' + ${tarea.prioridad.color} + '20'">
+                                    </span>
+                                    <span th:if="${tarea.etiqueta != null}"
+                                          th:text="${tarea.etiqueta.nombre}"
+                                          class="text-xs font-bold px-2 py-0.5 rounded"
+                                          th:style="'color: ' + ${tarea.etiqueta.color} + '; background-color: ' + ${tarea.etiqueta.color} + '20'">
+                                    </span>
+                                </div>
+                                <h4 th:text="${tarea.nombre}" class="text-slate-200 font-medium text-sm mb-3"></h4>
+                                <div class="flex justify-between items-center mt-3 pt-3 border-t border-slate-700/50">
+                                    <div class="flex items-center gap-2 text-xs text-slate-500">
+                                        <i class="ph ph-user"></i>
+                                        <span th:text="${tarea.integrante != null ? tarea.integrante.usuario.nombre + ' ' + tarea.integrante.usuario.apellido : 'Sin asignar'}"></span>
+                                    </div>
+                                    <img th:if="${tarea.integrante != null}"
+                                         th:src="@{'/' + ${tarea.integrante.usuario.foto}}"
+                                         th:title="${tarea.integrante.usuario.nombre}"
+                                         class="w-6 h-6 rounded-full object-cover border border-slate-600">
+                                </div>
+                            </div>
+                            <div th:if="${tareasColumna == null or tareasColumna.isEmpty()}"
+                                 class="text-center py-8 text-slate-600 text-xs flex flex-col items-center gap-2">
+                                <i class="ph ph-tray text-2xl"></i>
+                                Sin tareas
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel lateral -->
+                <div class="xl:col-span-1 space-y-6">
+
+                    <!-- Presupuesto -->
+                    <div class="bg-dark-800 rounded-xl border border-slate-700/50 p-5">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wide mb-4">Presupuesto</h3>
+                        <div th:if="${proyecto.presupuesto != null}">
+                            <div class="flex items-center justify-center py-2">
+                                <div class="w-32 h-32 relative flex items-center justify-center shadow-lg shadow-black/30 rounded-full"
+                                     th:style="'background: conic-gradient(' + ${proyecto.color} + ' 0% ' + ${porcentajeGasto} + '%, #1e293b ' + ${porcentajeGasto} + '% 100%)'">
+                                    <div class="w-24 h-24 bg-dark-800 rounded-full flex flex-col items-center justify-center z-10">
+                                        <span class="text-2xl font-bold text-white" th:text="${porcentajeGasto + '%'}"></span>
+                                        <span class="text-[10px] text-slate-400 uppercase">Gastado</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 space-y-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-slate-400">Usado</span>
+                                    <span class="text-white font-mono" th:text="'$ ' + ${totalGasto}"></span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-slate-400">Restante</span>
+                                    <span class="font-mono font-bold"
+                                          th:classappend="${restante >= 0} ? 'text-emerald-400' : 'text-red-400'"
+                                          th:text="'$ ' + ${restante}"></span>
+                                </div>
+                                <div class="flex justify-between text-sm border-t border-slate-700 pt-3">
+                                    <span class="text-slate-400">Total</span>
+                                    <span class="text-white font-mono" th:text="'$ ' + ${proyecto.presupuesto}"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div th:unless="${proyecto.presupuesto != null}"
+                             class="text-slate-500 text-xs text-center py-4 flex flex-col items-center gap-2">
+                            <i class="ph ph-chart-pie-slice text-2xl"></i>
+                            Sin presupuesto asignado
+                        </div>
+                    </div>
+
+                    <!-- Equipo -->
+                    <div class="bg-dark-800 rounded-xl border border-slate-700/50 p-5">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-sm font-bold text-white uppercase tracking-wide">Equipo</h3>
+                            <span class="text-slate-500 text-xs" th:text="${proyecto.integrantes.size()} + ' miembros'"></span>
+                        </div>
+                        <ul class="space-y-4">
+                            <li th:each="integrante : ${proyecto.integrantes}" class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <img th:src="@{'/' + ${integrante.usuario.foto}}"
+                                         th:title="${integrante.usuario.nombre}"
+                                         class="w-8 h-8 rounded-full object-cover border border-slate-700">
+                                    <div class="truncate max-w-[100px] xs:max-w-none">
+                                        <p th:text="${integrante.usuario.nombre + ' ' + integrante.usuario.apellido}"
+                                           class="text-sm font-medium text-white truncate"></p>
+                                        <p th:text="${integrante.usuario.email}"
+                                           class="text-[10px] text-slate-500 truncate"></p>
+                                    </div>
+                                </div>
+                                <span th:text="${integrante.rol.nombre}"
+                                      class="text-[10px] px-2 py-0.5 rounded border shrink-0"
+                                      th:style="'color: ' + ${integrante.rol.color} + '; background-color: ' + ${integrante.rol.color} + '15; border-color: ' + ${integrante.rol.color} + '40'">
+                                </span>
+                            </li>
+                        </ul>
+                        <button class="w-full mt-4 py-2 border border-dashed border-slate-600 text-slate-400 rounded-lg hover:bg-slate-700/50 text-xs transition-colors">
+                            + Añadir Miembro
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- FAB móvil -->
+            <label for="dialog-tarea"
+                   class="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-accent-600 text-white rounded-full shadow-lg shadow-accent-600/40 flex items-center justify-center text-2xl z-20 cursor-pointer hover:bg-accent-500 transition-colors">
+                <i class="ph ph-plus"></i>
+            </label>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

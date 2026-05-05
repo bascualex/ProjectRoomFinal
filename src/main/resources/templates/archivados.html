@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProjectRoom - Archivados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 900: '#0f172a', 800: '#1e293b', 950: '#020617' },
+                        accent: { 500: '#3b82f6', 600: '#2563eb' }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-dark-900 text-slate-200 font-sans antialiased h-screen flex overflow-hidden">
+
+<input type="checkbox" id="menu-toggle" class="peer hidden" />
+<label for="menu-toggle" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm peer-checked:block md:hidden cursor-pointer"></label>
+
+<aside class="fixed inset-y-0 left-0 z-50 w-64 bg-dark-950 flex flex-col border-r border-slate-800 transform -translate-x-full transition-transform duration-300 ease-in-out peer-checked:translate-x-0 md:translate-x-0 md:static">
+    <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800">
+        <a th:href="@{/}" class="flex items-center">
+            <img src="/img/logo.png" alt="Logo" class="w-10 h-10">
+            <span class="text-xl font-bold tracking-wide text-white ml-2">ProjectRoom</span>
+        </a>
+        <label for="menu-toggle" class="md:hidden text-slate-400 cursor-pointer hover:text-white"><i class="ph ph-x text-2xl"></i></label>
+    </div>
+    <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Principal</p>
+        <a th:href="@{/}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-kanban text-xl mr-3"></i><span class="font-medium">Proyectos</span>
+        </a>
+        <a th:href="@{/tareas}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-check-square-offset text-xl mr-3"></i><span class="font-medium">Mis Tareas</span>
+        </a>
+        <a th:href="@{/estadisticas}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-chart-line-up text-xl mr-3"></i><span class="font-medium">Estadísticas</span>
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 bg-accent-600/10 text-accent-500 rounded-lg transition-colors">
+            <i class="ph ph-archive text-xl mr-3"></i><span class="font-medium">Proyectos Archivados</span>
+        </a>
+        <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2">Administración</p>
+        <a th:href="@{/integrantes}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-users text-xl mr-3"></i><span class="font-medium">Integrantes</span>
+        </a>
+        <a th:href="@{/roles_permisos}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            <i class="ph ph-shield-checkered text-xl mr-3"></i><span class="font-medium">Roles y Permisos</span>
+        </a>
+        <a href="#" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg group transition-colors">
+            <i class="ph ph-gear text-xl mr-3"></i>
+            <span class="font-medium">Configuración</span>
+        </a>
+    </nav>
+    <div class="p-4 border-t border-slate-800">
+        <div class="flex items-center gap-3">
+            <img th:src="@{'/' + ${usuario.foto}}" alt="User" class="w-10 h-10 rounded-full border-2 border-slate-700 object-cover">
+            <div class="flex flex-col truncate">
+                <span th:text="${usuario.nombre + ' ' + usuario.apellido}" class="text-sm font-semibold text-white"></span>
+                <span th:text="${usuario.email}" class="text-xs text-slate-500"></span>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <header class="h-16 bg-dark-900/50 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 md:px-8 z-10 sticky top-0">
+        <div class="flex items-center gap-3">
+            <label for="menu-toggle" class="md:hidden text-slate-400 hover:text-white cursor-pointer p-2 -ml-2"><i class="ph ph-list text-2xl"></i></label>
+            <h1 class="text-xl font-semibold text-white">Proyectos Archivados</h1>
+        </div>
+        <span class="text-sm text-slate-500" th:text="${proyectos.size()} + ' proyectos'"></span>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-4 md:p-8">
+
+        <div th:if="${proyectos.isEmpty()}" class="flex flex-col items-center justify-center h-64 text-slate-600">
+            <i class="ph ph-archive text-5xl mb-4"></i>
+            <p class="text-lg font-medium">No tienes proyectos archivados</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div th:each="proyecto : ${proyectos}"
+                 class="bg-dark-800 rounded-xl overflow-hidden border border-slate-700/50 hover:border-slate-600 transition-all flex flex-col opacity-75 hover:opacity-100">
+
+                <div class="h-24 p-4 relative flex flex-col justify-between"
+                     th:style="'background: linear-gradient(135deg, ' + ${proyecto.color} + '30, #1e293b)'">
+                    <div class="flex justify-between items-start">
+                        <h3 th:text="${proyecto.nombre}" class="text-base font-bold text-white"></h3>
+                        <i class="ph ph-archive text-slate-500 text-lg"></i>
+                    </div>
+                    <span th:text="${proyecto.tipo}" class="text-xs text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded w-fit"></span>
+                </div>
+
+                <div class="p-4 flex-1 flex flex-col justify-between">
+                    <div class="space-y-2 text-xs text-slate-500">
+                        <p><span class="text-slate-400">Inicio:</span> <span th:text="${proyecto.fechaInicial}"></span></p>
+                        <p><span class="text-slate-400">Fin:</span> <span th:text="${proyecto.fechaFinal}"></span></p>
+                        <p th:if="${proyecto.presupuesto != null}">
+                            <span class="text-slate-400">Presupuesto:</span>
+                            <span th:text="'$ ' + ${proyecto.presupuesto}"></span>
+                        </p>
+                    </div>
+                    <form th:action="@{/proyectos/restaurar/{id}(id=${proyecto.id})}" method="post" class="mt-4">
+                        <button type="submit"
+                                class="w-full py-2 border border-dashed border-slate-600 text-slate-400 rounded-lg hover:border-accent-500 hover:text-accent-400 text-xs transition-colors flex items-center justify-center gap-2">
+                            <i class="ph ph-arrow-counter-clockwise"></i> Restaurar Proyecto
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+</body>
+</html>
